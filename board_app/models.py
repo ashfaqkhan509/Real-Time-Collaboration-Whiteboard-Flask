@@ -28,7 +28,7 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return f"<User(username={self.username})>"
-    
+
     # Password helpers
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
@@ -86,7 +86,10 @@ class BoardMembership(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     board_id: Mapped[int] = mapped_column(ForeignKey("boards.id"), nullable=False)
-    permission: Mapped[PermissionEnum] = mapped_column(Enum(PermissionEnum), default=PermissionEnum.VIEW)
+    permission: Mapped[PermissionEnum] = mapped_column(
+        Enum(PermissionEnum),
+        default=PermissionEnum.VIEW
+    )
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -94,7 +97,7 @@ class BoardMembership(db.Model):
     board: Mapped["Board"] = relationship(back_populates="memberships")
 
     def __repr__(self):
-        return f"<BoardMembership(user={self.user.username}, board={self.board.name}, perm={self.permission.value})>"
+        return f"<BoardMembership(user={self.user.username}, board={self.board.name}"
 
 
 class ActionTypeEnum(enum.Enum):
@@ -148,7 +151,11 @@ class ActiveConnection(db.Model):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     channel_name: Mapped[str] = mapped_column(String(200), nullable=False)  # WebSocket channel
     connected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    last_seen: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_seen: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
 
     # Relationships
     board: Mapped["Board"] = relationship(back_populates="active_connections")

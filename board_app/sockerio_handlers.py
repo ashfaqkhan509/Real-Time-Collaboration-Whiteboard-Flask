@@ -16,6 +16,7 @@ from board_app.utils import (
     remove_active_connection
 )
 
+
 @socketio.on('connect')
 def handle_connect():
     board_id = request.args.get('board_id')
@@ -23,21 +24,21 @@ def handle_connect():
     if not board_id:
         disconnect()
         return
-    
+
     if not current_user.is_authenticated:
         disconnect()
         return
-    
+
     if not has_board_access(board_id, current_user.id):
         disconnect()
         return
-    
+
     room_name = f"board-{board_id}"
     join_room(room_name)
 
     # Create a new active connection
     add_active_connection(board_id, current_user.id, request.sid)
-    
+
     # Send current board state to the newly connected user
     board_state = get_board_state(board_id)
     emit('board_state', {
@@ -70,21 +71,21 @@ def handle_drawing_action(data):
             'message': 'Board ID is required'
         })
         return
-    
+
     if not has_edit_permission(board_id, current_user.id):
         emit('error', {
             'type': 'error',
             'message': 'You do not have permission to edit this board'
         })
         return
-    
+
     # Save the drawing action
     action = save_drawing_action(board_id, current_user.id, data)
-    
+
     if action:
         # Broadcast drawing action to all users in the room
         room_name = f"board-{board_id}"
-        
+
         socketio.emit('drawing_action', {
             'type': 'drawing_action',
             'action': action,
@@ -107,7 +108,7 @@ def handle_cursor_position(data):
             'message': 'Board ID is required'
         })
         return
-    
+
     room_name = f"board-{board_id}"
     socketio.emit('cursor_position', {
         'type': 'cursor_position',
@@ -128,7 +129,7 @@ def handle_request_users():
             'message': 'Board ID is required'
         })
         return
-    
+
     users = get_active_users(board_id)
 
     emit('active_users', {

@@ -17,7 +17,9 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         # Check if username or email already exists
-        if User.query.filter((User.username == form.username.data) | (User.email == form.email.data)).first():
+        if User.query.filter(
+            (User.username == form.username.data) | (User.email == form.email.data)
+        ).first():
             flash("Username or email already exists.", "danger")
             return redirect(url_for("auth.register"))
 
@@ -98,7 +100,10 @@ def create_board():
 def board_detail(board_id):
     board = Board.query.get(board_id)
 
-    membership = BoardMembership.query.filter_by(board_id=board_id, user_id=current_user.id).first()
+    membership = BoardMembership.query.filter_by(
+        board_id=board_id,
+        user_id=current_user.id
+    ).first()
     if not membership:
         flash("You are not a member of this board.", "danger")
         return redirect(url_for("board.list_boards"))

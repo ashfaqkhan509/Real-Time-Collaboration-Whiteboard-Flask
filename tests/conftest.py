@@ -11,7 +11,7 @@ def app():
     """Create application for testing."""
     # Create a temporary database file
     db_fd, db_path = tempfile.mkstemp()
-    
+
     # Create test app with test configuration
     app = create_app()
     app.config.update({
@@ -21,13 +21,13 @@ def app():
         'SECRET_KEY': 'test-secret-key',
         'LOGIN_DISABLED': False
     })
-    
+
     with app.app_context():
         db.create_all()
         yield app
         db.session.remove()
         db.drop_all()
-    
+
     os.close(db_fd)
     os.unlink(db_path)
 
@@ -77,7 +77,7 @@ def test_board(app, test_user):
         board = Board(name='Test Board', created_by_id=test_user)
         db.session.add(board)
         db.session.commit()
-        
+
         # Add user as admin member
         membership = BoardMembership(
             user_id=test_user,
@@ -86,7 +86,7 @@ def test_board(app, test_user):
         )
         db.session.add(membership)
         db.session.commit()
-        
+
         board_id = board.id
         db.session.close()
         return board_id
@@ -99,7 +99,7 @@ def test_board_with_members(app, test_user, test_user2):
         board = Board(name='Test Board with Members', created_by_id=test_user)
         db.session.add(board)
         db.session.commit()
-        
+
         # Add users as members
         admin_membership = BoardMembership(
             user_id=test_user,
@@ -114,7 +114,7 @@ def test_board_with_members(app, test_user, test_user2):
         db.session.add(admin_membership)
         db.session.add(edit_membership)
         db.session.commit()
-        
+
         board_id = board.id
         db.session.close()
         return board_id

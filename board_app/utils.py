@@ -9,7 +9,6 @@ from board_app.models import (
 )
 from board_app import db
 from datetime import datetime
-from flask_socketio import emit
 from board_app import socketio
 
 
@@ -42,9 +41,9 @@ def has_board_access(board_id, user_id):
         board = get_board(board_id)
         if not board:
             return False
-        
+
         membership = get_board_membership(board_id, user_id)
-        
+
         return membership is not None
     except Exception as e:
         print(f"Error while checking board access:{e}")
@@ -57,7 +56,7 @@ def has_edit_permission(board_id, user_id):
 
         if not membership:
             return False
-        
+
         return membership.permission in [PermissionEnum.EDIT, PermissionEnum.ADMIN]
     except Exception as e:
         print(f"Error while checking edit permission:{e}")
@@ -76,7 +75,7 @@ def get_board_state(board_id):
             .filter_by(board_id=board_id)\
             .order_by(DrawingAction.created_at)\
             .all()
-        
+
         # Convert to dict format for JSON serialization
         board_state = []
         for action in actions:
@@ -84,7 +83,11 @@ def get_board_state(board_id):
             client_tool = None
             try:
                 if isinstance(action.action_data, dict):
-                    client_tool = action.action_data.get('action_type') or action.action_data.get('tool')
+                    client_tool = (
+                        action.action_data.get("action_type")
+                        or action.action_data.get("tool")
+                    )
+
             except Exception:
                 client_tool = None
 
@@ -96,7 +99,7 @@ def get_board_state(board_id):
                 'user_id': action.user_id,
                 'timestamp': action.created_at.isoformat() if action.created_at else None
             })
-        
+
         return board_state
     except Exception as e:
         print(f"Error while getting board state: {e}")
@@ -182,7 +185,7 @@ def add_active_connection(board_id, user_id, channel_name):
             board_id=board_id,
             user_id=user_id
         ).first()
-        
+
         if existing:
             existing.channel_name = channel_name
             existing.connected_at = datetime.utcnow()
@@ -194,7 +197,7 @@ def add_active_connection(board_id, user_id, channel_name):
                 channel_name=channel_name
             )
             db.session.add(connection)
-        
+
         db.session.commit()
     except Exception as e:
         print(f"Error adding active connection: {e}")
@@ -208,7 +211,7 @@ def remove_active_connection(board_id, user_id):
             board_id=board_id,
             user_id=user_id
         ).first()
-        
+
         if connection:
             db.session.delete(connection)
             db.session.commit()
@@ -238,7 +241,7 @@ def update_last_seen(board_id, user_id):
             board_id=board_id,
             user_id=user_id
         ).first()
-        
+
         if connection:
             connection.last_seen = datetime.utcnow()
             db.session.commit()
