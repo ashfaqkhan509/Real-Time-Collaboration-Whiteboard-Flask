@@ -14,9 +14,10 @@ login_manager.login_view = 'auth.login'
 socketio = SocketIO()
 
 
-def create_app():
+def create_app(config_class=Config):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(config_class)
+
     db.init_app(app)
     migrate.init_app(app, db)
     socketio.init_app(app)
@@ -26,8 +27,6 @@ def create_app():
     app.register_blueprint(routes.auth_bp)
     app.register_blueprint(routes.board_bp)
 
-    # Import Socket.IO handlers so events are registered when the app starts
-    # Do not remove this import; it has side effects that register event handlers
     import board_app.sockerio_handlers  # noqa: F401
 
     return app

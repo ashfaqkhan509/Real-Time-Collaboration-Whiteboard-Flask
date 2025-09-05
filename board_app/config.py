@@ -15,4 +15,7 @@ class Config:
 
 class TestConfig(Config):
     TESTING = True
-    SQLALCHEMY_TEST_DATABASE_URI = os.getenv('SQLALCHEMY_TEST_DATABASE_URI')
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    WTF_CSRF_ENABLED = False
+    SECRET_KEY = "test-secret-key"
+    LOGIN_DISABLED = False

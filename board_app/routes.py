@@ -107,7 +107,7 @@ def board_detail(board_id):
     if not membership:
         flash("You are not a member of this board.", "danger")
         return redirect(url_for("board.list_boards"))
-    
+
     can_draw = membership.permission in [PermissionEnum.ADMIN, PermissionEnum.EDIT]
 
     return render_template(

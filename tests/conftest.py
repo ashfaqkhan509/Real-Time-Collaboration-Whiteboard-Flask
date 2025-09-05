@@ -1,6 +1,5 @@
+from board_app.config import TestConfig
 import pytest
-import os
-import tempfile
 from board_app import create_app, db
 from board_app.models import User, Board, BoardMembership, PermissionEnum
 import socketio as client_socketio
@@ -8,28 +7,12 @@ import socketio as client_socketio
 
 @pytest.fixture(scope='function')
 def app():
-    """Create application for testing."""
-    # Create a temporary database file
-    db_fd, db_path = tempfile.mkstemp()
-
-    # Create test app with test configuration
-    app = create_app()
-    app.config.update({
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': f'sqlite:///{db_path}',
-        'WTF_CSRF_ENABLED': False,
-        'SECRET_KEY': 'test-secret-key',
-        'LOGIN_DISABLED': False
-    })
-
+    app = create_app(TestConfig)
     with app.app_context():
         db.create_all()
         yield app
         db.session.remove()
         db.drop_all()
-
-    os.close(db_fd)
-    os.unlink(db_path)
 
 
 @pytest.fixture(scope='function')

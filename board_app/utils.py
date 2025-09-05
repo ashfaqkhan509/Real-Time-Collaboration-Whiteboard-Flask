@@ -93,7 +93,14 @@ def get_board_state(board_id):
 
             board_state.append({
                 'id': action.id,
-                'action_type': client_tool or (action.action_type.value if hasattr(action.action_type, 'value') else action.action_type),
+                'action_type': (
+                    client_tool
+                    or (
+                        action.action_type.value
+                        if hasattr(action.action_type, 'value')
+                        else action.action_type
+                    )
+                ),
                 'action_data': action.action_data,
                 'action_id': action.action_id,
                 'user_id': action.user_id,
@@ -126,7 +133,6 @@ def save_drawing_action(board_id, user_id, data):
                 'timestamp': datetime.utcnow().isoformat()
             }
 
-        # Normalize client tool into model enum categories while preserving original tool in action_data
         client_action_type = data.get('action_type')
         if not client_action_type:
             raise ValueError('Missing action_type in drawing action data')
