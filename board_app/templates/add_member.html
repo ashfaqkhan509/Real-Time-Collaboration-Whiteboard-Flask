@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Member - {{ board.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Add Member to {{ board.name }}</h2>
+
+    {% if users %}
+        <form method="POST">
+            <div class="mb-3">
+                <label for="user_id" class="form-label">Select User</label>
+                <select class="form-select" name="user_id" required>
+                    {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="permission" class="form-label">Permission</label>
+                <select class="form-select" name="permission">
+                    <option value="view">View</option>
+                    <option value="edit">Edit</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Add Member</button>
+            <a href="{{ url_for('board.board_detail', board_id=board.id) }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    {% else %}
+        <div class="alert alert-info mt-4">
+            All users are already members of this board.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

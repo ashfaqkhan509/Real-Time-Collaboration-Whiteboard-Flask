@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ board.name }} - Collaboration Whiteboard{% endblock %}
+
+{% block extra_css %}
+<meta name="can-draw" content="{{ 'true' if can_draw else 'false' }}">
+<meta name="board-id" content="{{ board.id }}">
+<meta name="current-user" content="{{ current_user.username }}">
+<style>
+    #whiteboard-container {
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        overflow: hidden;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #whiteboard-canvas {
+        cursor: crosshair;
+        display: block;
+    }
+    .toolbar {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 10px;
+    }
+    .tool-btn {
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+    .tool-btn.active {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+    .color-option {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+        cursor: pointer;
+        border: 2px solid transparent;
+    }
+    .color-option.active {
+        border-color: #000;
+        transform: scale(1.1);
+    }
+    .online-users {
+        background-color: #f8f9fa;
+        border-left: 1px solid #dee2e6;
+        padding: 15px;
+        height: 100%;
+        overflow-y: auto;
+    }
+    .user-cursor {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1000;
+    }
+    .user-label {
+        position: absolute;
+        background-color: rgba(0,0,0,0.7);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+        pointer-events: none;
+        z-index: 1000;
+        white-space: nowrap;
+    }
+    .user-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .activity-entry {
+        border-bottom: 1px solid #eee;
+        padding: 2px 0;
+    }
+    .timestamp {
+        font-weight: bold;
+    }
+    #connection-indicator {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        z-index: 1000;
+        transition: all 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>{{ board.name }}</h2>
+            <div>
+                <span class="badge bg-secondary me-2">Permission: {{ membership.permission }}</span>
+                <span class="badge bg-info me-2">User: {{ current_user.username }}</span>
+
+                <!-- Show Add Member button only if current user is admin -->
+                {% if membership.permission.value == 'admin' %}
+                    <a href="{{ url_for('board.add_member', board_id=board.id) }}"
+                       class="btn btn-primary btn-sm me-2">
+                        <i class="bi bi-person-plus"></i> Add Member
+                    </a>
+                {% endif %}
+                
+                <button id="clear-board" class="btn btn-danger btn-sm">
+                    <i class="bi bi-trash"></i> Clear Board
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row flex-grow-1" style="height: calc(100vh - 200px);">
+    <div class="col-9 ps-0">
+        <div class="toolbar">
+            <div class="btn-group mb-2" role="group">
+                <button type="button" class="btn btn-outline-primary tool-btn active" data-tool="pen" title="Pen">
+                    <i class="bi bi-pen"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary tool-btn" data-tool="eraser" title="Eraser">
+                    <i class="bi bi-eraser"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary tool-btn" data-tool="line" title="Line">
+                    <i class="bi bi-slash-lg"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary tool-btn" data-tool="rectangle" title="Rectangle">
+                    <i class="bi bi-square"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary tool-btn" data-tool="circle" title="Circle">
+                    <i class="bi bi-circle"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary tool-btn" data-tool="text" title="Text">
+                    <i class="bi bi-fonts"></i>
+                </button>
+            </div>
+            
+            <div class="mb-2">
+                <label for="brush-size" class="form-label">Brush Size: <span id="brush-size-value">3</span>px</label>
+                <input type="range" class="form-range" min="1" max="20" value="3" id="brush-size">
+            </div>
+            
+            <div class="mb-2">
+                <label class="form-label">Color:</label>
+                <div>
+                    <span class="color-option active" style="background-color: #000000;" data-color="#000000"></span>
+                    <span class="color-option" style="background-color: #ff0000;" data-color="#ff0000"></span>
+                    <span class="color-option" style="background-color: #00ff00;" data-color="#00ff00"></span>
+                    <span class="color-option" style="background-color: #0000ff;" data-color="#0000ff"></span>
+                    <span class="color-option" style="background-color: #ffff00;" data-color="#ffff00"></span>
+                    <span class="color-option" style="background-color: #ff00ff;" data-color="#ff00ff"></span>
+                    <span class="color-option" style="background-color: #00ffff;" data-color="#00ffff"></span>
+                    <span class="color-option" style="background-color: #ffffff; border: 1px solid #ccc;" data-color="#ffffff"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="whiteboard-container">
+            <canvas id="whiteboard-canvas"></canvas>
+        </div>
+    </div>
+    
+    <div class="col-3 pe-0">
+        <div class="online-users">
+            <h5>Online Users</h5>
+            <div id="users-list">
+                <div class="text-muted small">Loading...</div>
+            </div>
+            
+            <hr class="my-3">
+            
+            <h5>Activity</h5>
+            <div id="activity-log" style="max-height: 300px; overflow-y: auto;">
+                <div class="text-muted small">Activity will appear here...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for JavaScript -->
+<input type="hidden" id="board-id" value="{{ board.id }}">
+<div id="user-data" data-current-user="{{ current_user.username }}" style="display: none;"></div>
+
+<!-- Modal for text input -->
+<div class="modal fade" id="textModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Text</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="text-input" rows="3" placeholder="Enter your text here..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="add-text">Add Text</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container for notifications -->
+<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    // Set global variables for the whiteboard
+    window.currentUsername = '{{ current_user.username }}';
+    window.boardId = {{ board.id }};
+    window.canDraw = {{ 'true' if can_draw else 'false' }};
+    
+    console.log('Page loaded with:');
+    console.log('- Username:', window.currentUsername);
+    console.log('- Board ID:', window.boardId);
+    console.log('- Can Draw:', window.canDraw);
+</script>
+<script src="{{ url_for('static', filename='js/whiteboard.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing whiteboard...');
+        try {
+            initializeWhiteboard({{ board.id }});
+            console.log('Whiteboard initialized successfully');
+        } catch (error) {
+            console.error('Error initializing whiteboard:', error);
+        }
+    });
+</script>
+{% endblock %}
