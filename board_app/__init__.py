@@ -31,7 +31,7 @@ def create_app(config_class=Config):
     # Safety: only block if running pytest with production DB
     if app.config['TESTING'] and "sqlite" not in app.config['SQLALCHEMY_DATABASE_URI']:
         raise RuntimeError("⚠️ Tests are running against a non-test database!")
-    
+
     celery_init_app(app)
 
     db.init_app(app)

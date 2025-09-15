@@ -1,8 +1,8 @@
 from celery import shared_task
-from flask_socketio import SocketIO
 from datetime import datetime
 from board_app import socketio, db
 from board_app.models import Board, BoardSnapshot
+
 
 @shared_task
 def send_heartbeat():
