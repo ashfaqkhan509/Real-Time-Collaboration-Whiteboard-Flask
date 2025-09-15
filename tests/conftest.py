@@ -7,7 +7,7 @@ import socketio as client_socketio
 
 @pytest.fixture(scope='function')
 def app():
-    app = create_app(TestConfig)
+    app = create_app(TestConfig)   # ✅ force TestConfig
     with app.app_context():
         db.create_all()
         yield app

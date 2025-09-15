@@ -5,6 +5,8 @@ from board_app.config import Config
 from flask_socketio import SocketIO
 from flask_login import LoginManager
 
+from celery_worker import celery_init_app
+
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -17,6 +19,20 @@ socketio = SocketIO()
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    app.config.from_mapping(
+        CELERY=dict(
+            broker_url=app.config['CELERY_BROKER_URL'],
+            result_backend=app.config['CELERY_RESULT_BACKEND'],
+            task_ignore_result=False
+        )
+    )
+
+    # Safety: only block if running pytest with production DB
+    if app.config['TESTING'] and "sqlite" not in app.config['SQLALCHEMY_DATABASE_URI']:
+        raise RuntimeError("⚠️ Tests are running against a non-test database!")
+    
+    celery_init_app(app)
 
     db.init_app(app)
     migrate.init_app(app, db)
